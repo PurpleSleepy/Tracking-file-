@@ -2,7 +2,6 @@
 
 '********************************************************************************
 ' Auteur     : Maxime MARTEAU
-' Mis à jour : 13/12/2024
 ' Description: Transférer les données d'une feuille source
 '              vers un fichier masque tout en gardant les
 '              fichiers ouverts.
