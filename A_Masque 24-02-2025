@@ -1,0 +1,144 @@
+
+
+'********************************************************************************
+' Auteur     : Maxime MARTEAU
+' Mis à jour : 13/12/2024
+' Description: Transférer les données d'une feuille source
+'              vers un fichier masque tout en gardant les
+'              fichiers ouverts.
+'********************************************************************************
+
+Sub Masque()
+
+'--------------------------------------------------------------------------------------
+    'Empeche les perturbations potentiels des macros causé par les autres application
+'--------------------------------------------------------------------------------------
+    
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+ 
+'---------------------------
+    'Déclaration variables
+'---------------------------
+    Dim wbsource                As Workbook
+    Dim wsSuivie                As Worksheet
+    Dim wsMasque                As Worksheet
+    Dim rngSuivie               As Range
+    Dim rngDestination          As Range
+    Dim stSheetNameSuivie       As String
+    Dim stColRef                As String
+    Dim stValRef                As String
+    Dim stselectedFile          As String
+    Dim wbMasque                As Workbook
+    
+'---------------------------------------------------
+    'Trouver les données dans le fichier de suivie
+'---------------------------------------------------
+
+    ' Feuille et colonne de référence
+    stSheetNameSuivie = "2024"          ' Feuille source dans le fichier actif
+    stColRef = "Ref."                ' Colonne de référence
+
+    ' Initialisation de la feuille source
+    Set wsSuivie = GetWorksheet(ThisWorkbook, stSheetNameSuivie)
+    If wsSuivie Is Nothing Then Exit Sub
+
+    stValRef = InputBox("Veuillez entrer la Réf du dossier :", "Référence dossier")
+    If Trim(stValRef) = "" Then
+        MsgBox "La référence ne peut pas être vide.", vbExclamation
+        Exit Sub
+    End If
+
+
+    Set rngSuivie = FindData(wsSuivie, stColRef, stValRef)
+    If rngSuivie Is Nothing Then
+        MsgBox "Aucune donnée trouvée pour la référence '" & stValRef & "'.", vbExclamation
+        Exit Sub
+    End If
+
+'----------------------------------
+    ' Sélection du fichier source
+'----------------------------------
+
+    Dim ws                  As Worksheet
+    Dim lastRow             As Long
+    Dim filePath            As String
+    Dim fileName            As String
+    Dim typeOST             As String
+ 
+    
+    ' Feuille et colonne de référence
+    stSheetNameSuivie = "2024"          ' Feuille source dans le fichier actif
+    stColRef = "Ref."                ' Colonne de référence
+
+    ' Initialisation de la feuille source
+    Set wsSuivie = GetWorksheet(ThisWorkbook, stSheetNameSuivie)
+    If wsSuivie Is Nothing Then Exit Sub
+    
+    
+    ' Trouver la dernière ligne remplie dans la colonne "Type d'OST" (colonne B ici, ajuste si nécessaire)
+    lastRow = wsSuivie.Cells(wsSuivie.Rows.Count, 7).End(xlUp).Row
+    
+    ' Récupérer la dernière valeur de la colonne "Type d'OST"
+    typeOST = wsSuivie.Cells(lastRow, 6).Value
+    
+    ' Définir le chemin d'accès aux fichiers
+    filePath = "C:\Users\mmarteau\OneDrive - Groupe BPCE\VBA\Projet CAP\Masques"
+    
+    ' Déterminer le fichier à ouvrir selon la valeur
+    Select Case typeOST
+        Case "Drip"
+            fileName = "2-MASQUE DE SAISIE DRIP"
+        Case "Scrip"
+            fileName = "1-MASQUE DE SAISIE SCRIP"
+        Case "Right"
+            fileName = "3-MASQUE DE SAISIE RIGHT ISSUE"
+        Case Else
+            MsgBox "Aucun fichier correspondant trouvé pour '" & typeOST & "'", vbExclamation, "Erreur"
+            Exit Sub
+    End Select
+    
+    ' Vérifier si le fichier existe avant de l'ouvrir
+   If Dir(filePath & "\" & fileName) <> "" Then
+        Workbooks.Open filePath & fileName
+        MsgBox "Le fichier " & fileName & " a été ouvert.", vbInformation, "Succès"
+    Else
+        MsgBox "Le fichier " & fileName & " est introuvable.", vbCritical, "Erreur"
+    End If
+
+'------------------------------------------
+    'Tranfère les données dans le masques
+'------------------------------------------
+    
+    Set wbsource = Workbooks.Open(filePath & "\" & fileName)
+
+    Set wsMasque = wbsource.Worksheets("RETRODIV_RECORDDATE_ticker_V12")
+
+    wsMasque.Cells(6, 3).Resize(rngSuivie.Rows.Count, rngSuivie.Columns.Count).Value = rngSuivie.Value
+ 
+'----------------------------------------------
+    'Met les données collé en ligne en colonne
+'----------------------------------------------
+    
+    ' Définir la plage source (les données en ligne)
+    Set sourceRange = wsMasque.Range("C6:Q6")
+    
+    ' Définir la plage de destination (les données seront mises en colonne)
+    Set destinationRange = wsMasque.Range("C6")
+    
+    ' Boucle pour copier les données de la ligne vers la colonne
+    For i = 1 To sourceRange.Columns.Count
+        destinationRange.Offset(i - 1, 0).Value = sourceRange.Cells(1, i).Value
+    Next i
+    
+    wsMasque.Range("D6:Q6").Clear
+    
+'------------------------------------------------------
+    'Réactive les fonctions qui ralentissais la macro
+'------------------------------------------------------
+    
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = True
+
+End Sub
+
