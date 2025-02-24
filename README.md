@@ -1,2 +1,2 @@
-# Tracking-file-
-Follow up file that create the appropriate folder based on the data 
+This VBA code automatically updates a tracking file for corporate event and creates corresponding files for each selected row in the table, based on the reference of the corporate event
+Ce code VBA permet de mettre à jour automatiquement un fichier de suivi sur les OST et de créer des fichiers correspondants pour chaque ligne du tableau sélectionnée, en fonction de la référence du dossier de l'OST
