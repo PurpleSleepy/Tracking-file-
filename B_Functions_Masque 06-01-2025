@@ -1,0 +1,76 @@
+Option Explicit
+
+'--------------------------------------------------------------------------------
+    ' Fonction : GetWorksheet
+    ' Description: Renvoie la feuille spécifiée ou Nothing si elle n'existe pas
+'--------------------------------------------------------------------------------
+
+Function GetWorksheet(wb As Workbook, sheetName As String) As Worksheet
+    
+    On Error Resume Next
+    Set GetWorksheet = wb.Sheets(sheetName)
+    If GetWorksheet Is Nothing Then
+        MsgBox "La feuille '" & sheetName & "' n'existe pas dans le classeur.", vbCritical
+    End If
+    On Error GoTo 0
+    
+End Function
+
+'---------------------------------------------------------------
+    ' Fonction : FindData
+    ' Description: Trouve une plage correspondant à une valeur
+'---------------------------------------------------------------
+
+Function FindData(ws As Worksheet, colName As String, searchValue As String) As Range
+   
+    Dim rngColRef       As Range
+    Dim rngValRef       As Range
+    
+    Set rngColRef = ws.Rows(2).Find(What:=colName, LookIn:=xlValues, LookAt:=xlWhole)
+    If rngColRef Is Nothing Then
+        MsgBox "La colonne de référence '" & colName & "' n'existe pas.", vbCritical
+        Exit Function
+    End If
+
+    Set rngValRef = ws.Columns(rngColRef.Column).Find(What:=searchValue, LookIn:=xlValues, LookAt:=xlWhole)
+    If rngValRef Is Nothing Then
+        MsgBox "La valeur '" & searchValue & "' n'a pas été trouvée.", vbExclamation
+        Exit Function
+    End If
+
+    Set FindData = ws.Range(rngValRef, ws.Cells(rngValRef.Row, ws.Columns.Count).End(xlToLeft))
+
+End Function
+
+'------------------------------------------------------------------------------------
+    ' Fonction : SelectFile
+    ' Description: Ouvre un sélecteur de fichiers et retourne le chemin sélectionné
+'------------------------------------------------------------------------------------
+
+Function SelectFile() As String
+    
+    Dim fd          As FileDialog
+    
+    Set fd = Application.FileDialog(msoFileDialogFilePicker)
+    With fd
+        .Title = "Sélectionnez un fichier masque"
+        .AllowMultiSelect = False
+        If .Show = -1 Then
+            SelectFile = .SelectedItems(1)
+        Else
+            MsgBox "Aucun fichier sélectionné.", vbExclamation
+            SelectFile = ""
+        End If
+    End With
+
+End Function
+
+'----------------------------------------------------------------------------
+    ' Procédure : TransferData
+    ' Description: Copie les données de la plage source vers la destination
+'----------------------------------------------------------------------------
+
+Sub TransferData(sourceRange As Range, destinationRange As Range)
+    destinationRange.Resize(sourceRange.Rows.Count, sourceRange.Columns.Count).Value = sourceRange.Value
+
+End Sub
