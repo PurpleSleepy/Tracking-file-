@@ -1,0 +1,163 @@
+
+Option Explicit
+
+'********************************************************************************
+' Auteur     : Maxime MARTEAU
+' Mis à jour : 17/02/2024
+' Description: Transférer les données d'une feuille source
+'              vers un fichier masque tout en gardant les
+'              fichiers ouverts.
+'********************************************************************************
+
+Sub Transfert()
+
+'--------------------------------------------------------------------------------------
+    'Empeche les perturbations potentiels des macros causé par les autres application
+'--------------------------------------------------------------------------------------
+    
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+  
+'---------------------------
+    'Déclaration variables
+'---------------------------
+    
+    Dim wsSuivie                        As Worksheet
+    Dim wsExtrac                        As Worksheet
+    Dim i                               As Long
+    Dim j                               As Long
+    Dim derniere_ligne                  As Long
+    Dim lignes_a_preserver              As Variant
+    Dim ligne_preservee                 As Boolean
+    Dim rngValExtrac                    As Range
+    Dim searchValue                     As String
+    Dim rngExtrac                       As Range
+    Dim rngDestination                  As Range
+    
+'-----------------------------------
+    'supprime les lignes non voulu
+'-----------------------------------
+    
+    ' Définir la feuille de travail
+    Set wsExtrac = ThisWorkbook.Worksheets("Extraction")
+    
+    Set wsSuivie = ThisWorkbook.Worksheets("2024")
+    
+    ' Trouver la dernière ligne utilisée dans la colonne A
+    derniere_ligne = wsExtrac.Cells(wsExtrac.Rows.Count, "A").End(xlUp).Row
+    
+    ' Lignes à préserver
+    lignes_a_preserver = Array(1, 7, 9, 34, 35, 36, 47, 67, 68, 363)
+    
+    ' Supprimer les lignes non préservées
+    For i = derniere_ligne To 1 Step -1
+        ligne_preservee = False
+        Dim numero As Variant
+        For Each numero In lignes_a_preserver
+            If i = numero Then
+                ligne_preservee = True
+                Exit For
+            End If
+        Next numero
+        
+        ' Supprimer si la ligne n'est pas préservée
+        If Not ligne_preservee Then
+            wsExtrac.Rows(i).ClearContents
+        End If
+    Next i
+    
+    ' Réorganiser les lignes pour supprimer les espaces
+    j = 1
+    For i = 1 To derniere_ligne
+        If Application.WorksheetFunction.CountA(wsExtrac.Rows(i)) > 0 Then
+            wsExtrac.Rows(i).Cut Destination:=wsExtrac.Rows(j)
+            j = j + 1
+        End If
+    Next i
+    
+    ' Supprimer les lignes vides restantes
+    For i = j To derniere_ligne
+        wsExtrac.Rows(i).ClearContents
+    Next i
+ 
+ ' Met en place correctement le type d'ost
+    wsExtrac.Rows(7).Cut
+    wsExtrac.Rows(1).Insert Shift:=xlDown
+    
+'------------------------
+    'trouve les données
+'------------------------
+
+ Set rngValExtrac = wsExtrac.Columns("B").Find(What:=searchValue, LookIn:=xlValues, LookAt:=xlWhole)
+    If rngValExtrac Is Nothing Then
+        MsgBox "La valeur '" & searchValue & "' n'a pas été trouvée.", vbExclamation
+    Exit Sub
+    End If
+
+'-----------------------------------------------
+    'Met les données collé en colonne en lignee
+'-----------------------------------------------
+
+ ' Définir la plage source (les données en colonne)
+
+    Set wsExtrac = ThisWorkbook.Worksheets("Extraction")
+    Set wsSuivie = ThisWorkbook.Worksheets("2024") ' Assurez-vous que le nom de la feuille est correct
+    Set rngExtrac = wsExtrac.Range("B1:B9")
+
+    ' Trouver la dernière ligne utilisée dans la colonne F
+    derniere_ligne = wsSuivie.Cells(wsSuivie.Rows.Count, "F").End(xlUp).Row
+
+    ' La première cellule vide après la dernière ligne remplie
+    Set rngDestination = wsSuivie.Cells(derniere_ligne + 1, "F")
+
+    ' Boucle pour copier les données de la colonne vers la ligne
+    For i = 1 To rngExtrac.Rows.Count
+        rngDestination.Offset(0, i - 1).Value = rngExtrac.Cells(i, 1).Value
+    Next i
+
+    ' Insérer la date d'aujourd'hui dans les colonnes P et Q
+    With wsSuivie
+        .Cells(derniere_ligne + 1, "Q").Value = Date ' Insère la date d'aujourd'hui dans la colonne P
+        .Cells(derniere_ligne + 1, "R").Value = Date ' Insère la date d'aujourd'hui dans la colonne Q
+    End With
+    
+    With wsSuivie
+    ' Recalculez la dernière ligne après avoir collé les nouvelles données
+    derniere_ligne = .Cells(.Rows.Count, "F").End(xlUp).Row
+
+    ' Variables pour les cellules des colonnes J, K et L
+    Dim cellJ As Range, cellK As Range, cellL As Range
+    Set cellJ = .Cells(derniere_ligne, "J")
+    Set cellK = .Cells(derniere_ligne, "K")
+    Set cellL = .Cells(derniere_ligne, "L")
+
+    ' Convertir le texte de la date (ISO 8601) si nécessaire
+    If InStr(cellJ.Value, "T") > 0 Then cellJ.Value = Left(cellJ.Value, 10)
+    If InStr(cellK.Value, "T") > 0 Then cellK.Value = Left(cellK.Value, 10)
+    If InStr(cellL.Value, "T") > 0 Then cellL.Value = Left(cellL.Value, 10)
+
+    ' Ajouter +1 jour aux dates
+    If IsDate(cellJ.Value) Then cellJ.Value = CDate(cellJ.Value) + 1
+    If IsDate(cellK.Value) Then cellK.Value = CDate(cellK.Value) + 1
+    If IsDate(cellL.Value) Then cellL.Value = CDate(cellL.Value) + 1
+
+    ' Appliquer le format de date dd/mm/yyyy
+    cellJ.NumberFormat = "dd/mm/yyyy"
+    cellK.NumberFormat = "dd/mm/yyyy"
+    cellL.NumberFormat = "dd/mm/yyyy"
+End With
+
+'--------------------------------------------------------------------------------------
+    'Empeche les perturbations potentiels des macros causé par les autres application
+'--------------------------------------------------------------------------------------
+    
+    Application.ScreenUpdating = False
+    Application.DisplayAlerts = False
+ 
+
+
+End Sub
+
+
+
+
