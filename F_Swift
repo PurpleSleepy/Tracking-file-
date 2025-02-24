@@ -1,0 +1,48 @@
+Option Explicit
+
+Sub Swiftexemple()
+    
+    Dim ws                          As Worksheet
+    Dim i                           As Long
+    Dim j                           As Long
+    Dim lignes_a_preserver          As Variant
+    Dim derniere_ligne              As Long
+    Dim ligne_preservee             As Boolean
+    
+    
+    Set ws = ThisWorkbook.Worksheets("swift")
+    derniere_ligne = ws.Cells(ws.Rows.Count, "A").End(xlUp).Row
+    lignes_a_preserver = Array(21, 23, 24, 25, 30, 31, 41, 42, 43, 44, 45, 46, 50, 51, 55, 56, 57, 58, 59, 60, 64, 65, 69, 70, 71, 72, 73, 78, 80)
+    
+    ' Supprimer le contenu des lignes non préservées
+    For i = 1 To derniere_ligne
+        ligne_preservee = False
+        For Each numero In lignes_a_preserver
+            If i = numero Then
+                ligne_preservee = True
+                Exit For
+            End If
+        Next numero
+        
+        If Not ligne_preservee Then
+            ws.Rows(i).ClearContents
+        End If
+    Next i
+    
+    ' Réorganiser les lignes pour supprimer les espaces
+    j = 1
+    For i = 1 To derniere_ligne
+        If Application.WorksheetFunction.CountA(ws.Rows(i)) > 0 Then
+            ws.Rows(i).Cut Destination:=ws.Rows(j)
+            j = j + 1
+        End If
+    Next i
+    
+    ' Supprimer les lignes vides restantes
+    For i = j To derniere_ligne
+        ws.Rows(i).ClearContents
+    Next i
+
+End Sub
+
+
